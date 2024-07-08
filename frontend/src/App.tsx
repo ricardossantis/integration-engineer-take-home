@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import {useState, useEffect, useCallback} from 'react';
 
 type Task = {
   id: number,
@@ -9,105 +9,158 @@ type Task = {
 function App() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [formData, setFormData] = useState({ title: '', description: '' });
+  const [updateId, setUpdateId] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchTasks();
   }, []);
 
-  const fetchTasks = () => fetch('http://localhost:8000/tasks')
-        .then(response => response.json())
-        .then(data => setTasks(data))
-        .catch(error => console.error('Error:', error));
+  const fetchTasks = async () => {
+    setIsLoading(true);
+    try {
+        const response = await fetch('http://localhost:8000/tasks');
+        const data = await response.json();
+        setTasks(data);
+        setError(null)
+    } catch (error) {
+        setError('Error fetching tasks, please, refresh the page.');
+    } finally {
+        setIsLoading(false);
+    }
+  };
 
   /* Complete the following functions to hit endpoints on your server */
-  const createTask = async ({ title, description }: {title: string, description: string}) => fetch('http://localhost:8000/tasks', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        title,
-        description
-      })
-    })
-      .then(response => response.json())
-      .then(data => {
-            if (data.error) {
-                console.error(data.error);
-                alert(data.error);
-                return;
-            }
-            setTasks([...tasks, data]);
-            setFormData({ title: '', description: '' });
-        })
-      .catch(error =>
-        console.error('Error:', error));
-
-  const deleteTask = (id: number) => fetch(`http://localhost:8000/tasks/${id}`, {
-      method: 'DELETE',
-    })
-      .then(response => response.json())
-      .then((data) => {
+  const createTask = async ({ title, description }: {title: string, description: string}) => {
+    setIsLoading(true);
+    try {
+        const response = await fetch('http://localhost:8000/tasks', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                title,
+                description
+            })
+        });
+        const data = await response.json();
         if (data.error) {
-          console.error(data.error);
-          alert(data.error);
-          return;
+            setError(data.error);
+            return;
+        }
+        setTasks([...tasks, data]);
+        setFormData({ title: '', description: '' });
+        setError(null)
+    } catch (error) {
+        setError('Error: ' + error);
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
+  const deleteTask = async (id: number) => {
+    setIsLoading(true);
+    try {
+        const response = await fetch(`http://localhost:8000/tasks/${id}`, {
+            method: 'DELETE',
+        });
+        const data = await response.json();
+        if (data.error) {
+            setError(data.error);
+            return;
         }
         setTasks(tasks.filter(task => task.id !== id));
-      })
-      .catch(error => console.error('Error:', error))
+        setError(null)
+    } catch (error) {
+        setError('Error: ' + error);
+    } finally {
+        setIsLoading(false);
+    }
+  };
 
-  const updateTask = (id: number, { title, description }: {title: string, description: string}) => fetch(`http://localhost:8000/tasks/${id}`, {
-          method: 'PATCH',
-          headers: {
-              'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-              title,
-              description
-          })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-              console.error(data.error);
-              alert(data.error);
-              return;
-            }
-            setTasks(tasks.map(task => task.id === id ? data : task));
-        })
-        .catch(error => console.error('Error:', error));
+const updateTask = async (id: number, { title, description }: {title: string, description: string}) => {
+    setIsLoading(true);
+    try {
+        const response = await fetch(`http://localhost:8000/tasks/${id}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                title,
+                description
+            })
+        });
+        const data = await response.json();
+        if (data.error) {
+            setError(data.error);
+            return;
+        }
+        setTasks(tasks.map(task => task.id === id ? data : task));
+        setFormData({ title: '', description: '' });
+        setError(null)
+    } catch (error) {
+        setError('Error: ' + error);
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
+  const updateFormData = useCallback((field: string, value: string) => {
+    setError(null)
+    setFormData(prevFormData => ({ ...prevFormData, [field]: value }));
+  }, []);
 
   return (
-    <div>
-      <h1>Task Management App</h1>
-      <ul>
-        {tasks.map(task => (
-            <li key={task.id}>
-              <h3>{task.title}</h3>
-              <p>{task.description}</p>
-              <button onClick={() => deleteTask(task.id)}>Delete</button>
-              <button onClick={() => updateTask(task.id, formData)}>Update</button>
-            </li>
-        ))}
-      </ul>
-      <div>
-        <h2>Create Task</h2>
-        <input
-          type="text"
-          placeholder="Title"
-          value={formData.title}
-          onChange={e => setFormData({ ...formData, title: e.target.value })}
-        />
-        <input
-          type="text"
-          placeholder="Description"
-          value={formData.description}
-          onChange={e => setFormData({ ...formData, description: e.target.value })}
-        />
-        <button onClick={() => createTask(formData)}>Create</button>
+      <div className='page_container'>
+          <h1 className='page_title'>Task Management App</h1>
+          {isLoading ? (
+              <p className='info_message'>Loading...</p>
+          ) : (
+              <>
+                  {error && <p className='error_message'>{error}</p>}
+                  <div className='tasks_container'>
+                      <div className='tasks_list'>
+                          {tasks.map(task => (
+                                  <div className='task_card' key={task.id}>
+                                      <h3>{task.title}</h3>
+                                      <p>{task.description}</p>
+                                      <button onClick={() => deleteTask(task.id)}>Delete</button>
+                                      <button onClick={() => setUpdateId(task.id)}>Update</button>
+                                  </div>
+                              )
+                          )}
+                      </div>
+                      {
+                          <div className='form'>
+                              <h2>{!updateId ? 'Create Task' : 'Update Task'}</h2>
+                              <input
+                                  className='text_input'
+                                  type="text"
+                                  placeholder="Title"
+                                  value={formData.title}
+                                  onChange={e => updateFormData('title', e.target.value)}
+                              />
+                              <input
+                                  className='text_input'
+                                  type="text"
+                                  placeholder="Description"
+                                  value={formData.description}
+                                  onChange={e => updateFormData('description', e.target.value)}
+                              />
+                              <button onClick={() => {
+                                  if (!updateId) return createTask(formData)
+                                  return updateTask(updateId, formData)
+                              }}>{!updateId ? 'Create' : 'Update'}</button>
+                              {updateId && <button onClick={() =>setUpdateId(null)}>Back to creation</button>}
+                          </div>
+                      }
+                  </div>
+              </>
+          )}
       </div>
-    </div>
   );
 }
 
