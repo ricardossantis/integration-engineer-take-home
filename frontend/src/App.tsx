@@ -14,30 +14,81 @@ function App() {
     fetchTasks();
   }, []);
 
-  const fetchTasks = async () => {
-    const response = await fetch('http://localhost:8000/tasks')
-    const tasks = await response.json();
-    setTasks(tasks);
-  };
+  const fetchTasks = () => fetch('http://localhost:8000/tasks')
+        .then(response => response.json())
+        .then(data => setTasks(data))
+        .catch(error => console.error('Error:', error));
 
   /* Complete the following functions to hit endpoints on your server */
-  const createTask = async () => {
-  };
+  const createTask = async ({ title, description }: {title: string, description: string}) => fetch('http://localhost:8000/tasks', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        title,
+        description
+      })
+    })
+      .then(response => response.json())
+      .then(data => {
+            if (data.error) {
+                console.error(data.error);
+                alert(data.error);
+                return;
+            }
+            setTasks([...tasks, data]);
+            setFormData({ title: '', description: '' });
+        })
+      .catch(error =>
+        console.error('Error:', error));
 
-  const deleteTask = async (id: string) => {
-  };
+  const deleteTask = (id: number) => fetch(`http://localhost:8000/tasks/${id}`, {
+      method: 'DELETE',
+    })
+      .then(response => response.json())
+      .then((data) => {
+        if (data.error) {
+          console.error(data.error);
+          alert(data.error);
+          return;
+        }
+        setTasks(tasks.filter(task => task.id !== id));
+      })
+      .catch(error => console.error('Error:', error))
 
+  const updateTask = (id: number, { title, description }: {title: string, description: string}) => fetch(`http://localhost:8000/tasks/${id}`, {
+          method: 'PATCH',
+          headers: {
+              'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+              title,
+              description
+          })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+              console.error(data.error);
+              alert(data.error);
+              return;
+            }
+            setTasks(tasks.map(task => task.id === id ? data : task));
+        })
+        .catch(error => console.error('Error:', error));
 
   return (
     <div>
       <h1>Task Management App</h1>
       <ul>
         {tasks.map(task => (
-          <li key={task.id}>
-            <h3>{task.title}</h3>
-            <p>{task.description}</p>
-            <button onClick={() => deleteTask(task.id)}>Delete</button>
-          </li>
+            <li key={task.id}>
+              <h3>{task.title}</h3>
+              <p>{task.description}</p>
+              <button onClick={() => deleteTask(task.id)}>Delete</button>
+              <button onClick={() => updateTask(task.id, formData)}>Update</button>
+            </li>
         ))}
       </ul>
       <div>
@@ -54,7 +105,7 @@ function App() {
           value={formData.description}
           onChange={e => setFormData({ ...formData, description: e.target.value })}
         />
-        <button onClick={createTask}>Create</button>
+        <button onClick={() => createTask(formData)}>Create</button>
       </div>
     </div>
   );
