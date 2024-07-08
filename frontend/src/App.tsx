@@ -30,6 +30,7 @@ function App() {
         setTasks(data);
         if (!data.length) setInfo('No tasks found, please, create one.');
         setError(null)
+        setInfo(null)
     } catch (error) {
         setError('Error fetching tasks, please, refresh the page.');
     } finally {

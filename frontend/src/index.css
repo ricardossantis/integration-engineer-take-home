@@ -96,6 +96,10 @@ button:focus-visible {
     border-radius: 10px;
     background-color: #1a1a1a;
     border: 1px solid #646cff;
+
+    @media (max-width: 768px) {
+        flex-direction: column;
+    }
 }
 
 .tasks_list {
@@ -139,4 +143,9 @@ button:focus-visible {
     background-color: #1a1a1a;
     color: #646cff;
     transition: border-color 0.25s;
+
+    @media (max-width: 768px) {
+        width: 80%;
+        font-size: 0.8em;
+    }
 }
