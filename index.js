@@ -1,10 +1,12 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const cors = require('cors');
 
 const app = express();
 const PORT = process.env.PORT || 8000;
 
 app.use(bodyParser.json());
+app.use(cors())
 
 let tasks = [];
 let nextTaskId = 1;
@@ -14,10 +16,43 @@ app.get('/tasks', (req, res) => {
 });
 
 app.post('/tasks', (req, res) => {
+    const {title, description, ...rest} = req.body;
+    if (!title || !description) {
+        res.status(400).json({error: 'Title and description are required'});
+        return;
+    }
+    const task = {id: nextTaskId, title, description, ...rest};
+    tasks.push(task);
+    nextTaskId++;
+    res.json(task);
 });
 
+app.patch('/tasks/:id', (req, res) => {
+    const id = parseInt(req.params.id);
+    const index = tasks.findIndex(task => task.id === id);
+    if (index === -1) {
+        res.status(404).json({error: 'Task not found'});
+        return;
+    }
+    const {title, description} = req.body;
+    if (!title && !description) {
+        res.status(400).json({error: 'At least one field is required'});
+        return;
+    }
+    const task = tasks[index];
+    Object.assign(task, title ? {title} : {}, description ? {description} : {});
+    res.json(task);
+});
 
 app.delete('/tasks/:id', (req, res) => {
+    const id = parseInt(req.params.id);
+    const index = tasks.findIndex(task => task.id === id);
+    if (index === -1) {
+        res.status(404).json({error: 'Task not found'});
+        return;
+    }
+    tasks.splice(index, 1);
+    res.json({success: true});
 });
 
 app.listen(PORT, () => {
