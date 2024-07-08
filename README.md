@@ -50,3 +50,23 @@ Regards,
 The Duda Solutions Engineering Team
 
 ## Add any instructions to get your submission running below this line.
+
+### Backend
+
+1. Install dependencies
+```yarn install```
+2. Start the server
+```yarn start```
+3. For testing
+```yarn test```
+4. For development
+```yarn dev```
+
+### Frontend
+
+1. Install dependencies
+```yarn install```
+2. Start the server
+```yarn dev```
+3. build the project
+```yarn build```
