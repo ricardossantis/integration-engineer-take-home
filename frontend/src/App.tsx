@@ -12,6 +12,7 @@ function App() {
   const [updateId, setUpdateId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
 
   useEffect(() => {
     fetchTasks();
@@ -22,7 +23,12 @@ function App() {
     try {
         const response = await fetch('http://localhost:8000/tasks');
         const data = await response.json();
+        if (data.error) {
+            setError(data.error);
+            return;
+        }
         setTasks(data);
+        if (!data.length) setInfo('No tasks found, please, create one.');
         setError(null)
     } catch (error) {
         setError('Error fetching tasks, please, refresh the page.');
@@ -122,17 +128,6 @@ const updateTask = async (id: number, { title, description }: {title: string, de
               <>
                   {error && <p className='error_message'>{error}</p>}
                   <div className='tasks_container'>
-                      <div className='tasks_list'>
-                          {tasks.map(task => (
-                                  <div className='task_card' key={task.id}>
-                                      <h3>{task.title}</h3>
-                                      <p>{task.description}</p>
-                                      <button onClick={() => deleteTask(task.id)}>Delete</button>
-                                      <button onClick={() => setUpdateId(task.id)}>Update</button>
-                                  </div>
-                              )
-                          )}
-                      </div>
                       {
                           <div className='form'>
                               <h2>{!updateId ? 'Create Task' : 'Update Task'}</h2>
@@ -157,6 +152,18 @@ const updateTask = async (id: number, { title, description }: {title: string, de
                               {updateId && <button onClick={() =>setUpdateId(null)}>Back to creation</button>}
                           </div>
                       }
+                      <div className='tasks_list'>
+                          {info && <p className='info_message'>{info}</p>}
+                          {tasks.map(task => (
+                                  <div className='task_card' key={task.id}>
+                                      <h3>{task.title}</h3>
+                                      <p>{task.description}</p>
+                                      <button onClick={() => deleteTask(task.id)}>Delete</button>
+                                      <button onClick={() => setUpdateId(task.id)}>Update</button>
+                                  </div>
+                              )
+                          )}
+                      </div>
                   </div>
               </>
           )}

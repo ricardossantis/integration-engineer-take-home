@@ -74,7 +74,7 @@ button:focus-visible {
 }
 
 .info_message {
-  font-size: 3.2em;
+  font-size: 2em;
   line-height: 1.1;
 }
 
@@ -93,6 +93,9 @@ button:focus-visible {
     justify-content: center;
     width: 100%;
     min-height: 50vh;
+    border-radius: 10px;
+    background-color: #1a1a1a;
+    border: 1px solid #646cff;
 }
 
 .tasks_list {

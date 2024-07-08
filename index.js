@@ -16,12 +16,13 @@ app.get('/tasks', (req, res) => {
 });
 
 app.post('/tasks', (req, res) => {
-    const {title, description, ...rest} = req.body;
+    const {title, description} = req.body;
     if (!title || !description) {
         res.status(400).json({error: 'Title and description are required'});
         return;
     }
-    const task = {id: nextTaskId, title, description, ...rest};
+    const now = new Date();
+    const task = {id: nextTaskId, title, description, createdAt: now.getMilliseconds()};
     tasks.push(task);
     nextTaskId++;
     res.json(task);
@@ -40,7 +41,8 @@ app.patch('/tasks/:id', (req, res) => {
         return;
     }
     const task = tasks[index];
-    Object.assign(task, title ? {title} : {}, description ? {description} : {});
+    const now = new Date();
+    Object.assign(task, title ? {title} : {}, description ? {description} : {}, {updatedAt: now.getMilliseconds()}) ;
     res.json(task);
 });
 
